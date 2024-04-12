@@ -1,6 +1,8 @@
 # User Stories:
 1 As a consistent climber, I want to track my climbing frequency, intensity, and grades climbed, so that I can monitor my progress over time and set new goals for improvement.
+
 2 As an older climber, I want to input and monitor my blood pressure and heart rate, so that I can ensure I'm maintaining optimal health for climbing.
+
 3 As an experienced climber, I want to explore new climbing locations and styles, so that I can broaden my skills and experience different types of climbing challenges.
 
 # Exceptions:
