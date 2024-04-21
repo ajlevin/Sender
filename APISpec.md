@@ -156,4 +156,3 @@ Sarah, a route setter at a climbing gym, wants to add a new climbing route to th
 
 Sarah calls the endpoint /routes/add with the details of the new route, including its name, location, difficulty level, style, and gear requirements.
 She receives a success response indicating that the new route has been added to the database.
-These examples demonstrate how climbers can interact with the climbing health metrics backend to track their climbing sessions and how route setters can add new climbing routes to the database.
