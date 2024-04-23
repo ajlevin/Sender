@@ -140,7 +140,8 @@ Response:
 ```
 
 Example Flows
-##### Climber Tracking Metrics Example Flow
+
+##### User Management Example FLow
 
 John, an avid climber, wants to track his climbing metrics. He starts by creating a user profile:
 
@@ -150,6 +151,16 @@ Next, John logs a climbing session:
 
 John calls the endpoint /climbing/log with his user ID, climbing frequency, intensity, grades climbed, heart rate, and blood pressure.
 He receives a success response indicating that his climbing session has been logged successfully.
+
+##### Climber Tracking Metrics Example Flow
+
+Jasper, an intermediate climber, wants to monitor their improvement over time as they're getting back into climbing after some time off.
+
+They first updates their profile with a new email after their time away, calling the endpoint /profile/jasperClimbz to swap emails.
+They receive back a successful response indiciating the update has been saved and applied to the acocunt.
+
+They then take a look at their old climbing data, calling /climbing/history/jasperClimbz to see where their baseline stands.
+They receive back a successful response containing a list of metrics from their prior saved climbs.
 
 ##### Route Setting Example Flow
 Sarah, a route setter at a climbing gym, wants to add a new climbing route to the database:
