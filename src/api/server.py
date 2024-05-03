@@ -1,7 +1,7 @@
 from fastapi import FastAPI, exceptions
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
-from src.api import carts, catalog, bottler, barrels, admin, info, inventory
+from src.api import profile, admin, inventory
 import json
 import logging
 import sys
@@ -12,23 +12,19 @@ description = """
 """
 
 app = FastAPI(
-    title="Central Coast Cauldrons",
+    title="Rock Climbing",
     description=description,
     version="0.0.1",
     terms_of_service="http://example.com/terms/",
     contact={
-        "name": "Lucas Pierce",
-        "email": "lupierce@calpoly.edu",
+        "name": "Andrew Martinez",
+        "email": "amart531@calpoly.edu",
     },
 )
 
 app.include_router(inventory.router)
-app.include_router(carts.router)
-app.include_router(catalog.router)
-app.include_router(bottler.router)
-app.include_router(barrels.router)
 app.include_router(admin.router)
-app.include_router(info.router)
+app.include_router(profile.router)
 
 @app.exception_handler(exceptions.RequestValidationError)
 @app.exception_handler(ValidationError)

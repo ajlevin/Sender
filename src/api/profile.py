@@ -11,8 +11,8 @@ router = APIRouter(
     dependencies=[Depends(auth.get_api_key)],
 )
 
-@router.get("/audit")
-def get_inventory():
+@router.get("/create")
+def create_user():
     """ """
     
-    return {"number_of_potions": 0, "ml_in_barrels": 0, "gold": 0}
+    return "1"
