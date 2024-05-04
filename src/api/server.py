@@ -22,9 +22,11 @@ app = FastAPI(
     },
 )
 
-app.include_router(inventory.router)
 app.include_router(admin.router)
 app.include_router(profile.router)
+app.include_router(climbing.router)
+app.include_router(routes.router)
+
 
 @app.exception_handler(exceptions.RequestValidationError)
 @app.exception_handler(ValidationError)
