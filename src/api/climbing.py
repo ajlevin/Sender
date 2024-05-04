@@ -75,7 +75,6 @@ def get_user_history(user_id: int):
                 'route_id': row.route_id,
                 'frequency': row.frequency,
                 'intensity': row.intensity,
-                'grade': row.grade,
                 'heart_rate': row.heart_rate,
                 'systolic_pressure': row.systolic_pressure,
                 'diastolic_pressure': row.diastolic_pressure
