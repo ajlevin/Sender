@@ -34,7 +34,7 @@ def create_route(new_route: Route):
                                         "location": new_route.route_location,
                                         "difficulty_level": new_route.difficulty_level,
                                         "style": new_route.style
-                                        }).scalar_one()
+                                        })
         return {
             "success": True,
             }
