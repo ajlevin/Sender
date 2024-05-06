@@ -22,7 +22,7 @@ Response:
 
 # Testing Results:
 1. Request:
-    `curl -X 'GET' 'https://reyshocatpskdkawoprf.supabase.co/climbing/history/1/' -H 'accept: application.json'`
+    `curl -X 'GET' 'https://csc365-final-project.onrender-com/climbing/history/1/' -H 'accept: application.json'`
 
 2. Response:
 ```json
