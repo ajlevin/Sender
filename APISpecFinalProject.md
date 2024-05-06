@@ -86,10 +86,8 @@ Response:
             "intensity": "integer",
             "grades": ["string"],
             "heart_rate": "integer",
-            "blood_pressure": {
-                "systolic": "integer",
-                "diastolic": "integer"
-            }
+            "systolic_pressure": "integer",
+            "diastolic_pressure": "integer"
         }
     ]
 }
