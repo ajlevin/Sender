@@ -25,6 +25,8 @@ Response:
     curl -X 'GET' 'https://.../climbing/history/1/' -H 'accept: application.json'
 
 2. Response:
+```json
+{
     "sessions": [
         {
             "date": "2024-05-06 00:10:17.355155+00",
@@ -36,3 +38,5 @@ Response:
             "diastolic_pressure": "81"
         }
     ]
+}
+```
