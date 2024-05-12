@@ -12,7 +12,7 @@ router = APIRouter(
 )
 
 class Climb(BaseModel):
-    profile_id: int
+    user_id: int
     route_id: int
     frequency: int 
     intensity: int
@@ -28,14 +28,14 @@ def create_climb_log(log_entry: Climb):
     """
 
     insert_climb_row = """
-    INSERT INTO climbing (profile_id, route_id, frequency, intensity, heart_rate, systolic_pressure, diastolic_pressure) 
-    VALUES(:profile_id, :route_id, :frequency, :intensity, :heart_rate, :systolic_pressure, :diastolic_pressure)
+    INSERT INTO climbing (user_id, route_id, frequency, intensity, heart_rate, systolic_pressure, diastolic_pressure) 
+    VALUES(:user_id, :route_id, :frequency, :intensity, :heart_rate, :systolic_pressure, :diastolic_pressure)
     """
     try:
         with db.engine.begin() as connection:
             climb_row = connection.execute(sqlalchemy.text(insert_climb_row), 
                                         {
-                                        "profile_id": log_entry.profile_id, 
+                                        "user_id": log_entry.user_id, 
                                         "route_id": log_entry.route_id,
                                         "frequency": log_entry.frequency,
                                         "intensity": log_entry.intensity, 
@@ -62,7 +62,7 @@ def get_user_history(user_id: int):
     with db.engine.begin() as connection:
         # Select All Appropriate Rows
         result = connection.execute(
-        sqlalchemy.select(db.climbing_table).where(db.climbing_table.c.profile_id == user_id)
+        sqlalchemy.select(db.climbing_table).where(db.climbing_table.c.user_id == user_id)
         ).fetchall()
 
         # To Do:

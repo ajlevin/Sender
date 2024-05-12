@@ -1,7 +1,7 @@
 from fastapi import FastAPI, exceptions
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
-from src.api import profile, admin, climbing, routes
+from src.api import user, admin, climbing, routes
 import json
 import logging
 import sys
@@ -23,7 +23,7 @@ app = FastAPI(
 )
 
 app.include_router(admin.router)
-app.include_router(profile.router)
+app.include_router(user.router)
 app.include_router(climbing.router)
 app.include_router(routes.router)
 
