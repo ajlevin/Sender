@@ -35,7 +35,57 @@ class Route(BaseModel):
     description: str
     protection: str
     
-@router.post("/")
+@router.get("/recommend")
+def recommend_route(user_id: int):
+    """
+    Recommend Climbing Routes for A Specific User
+    """
+    recommended_routes = []
+    user_locations = []
+
+    with db.engine.begin() as connection:
+        user_route_history = connection.execute(
+            sqlalchemy.select(db.climbing_table).where(db.climbing_table.c.user_id == user_id)).fetchall()
+        
+        user_route_history = connection.execute(sqlalchemy.text(
+            """
+            SELECT routes.location
+            FROM routes
+            INNER JOIN climbing ON routes.route_id = climbing.route_id
+            WHERE climbing.user_ud = :user_id
+            ORDER BY routes.French
+            """),
+            [{
+                "user_id": user_id
+            }])
+        
+        for route in user_route_history:
+            user_locations.append(route.location)    
+
+        routes = connection.execute(
+            sqlalchemy.select(db.routes_table).where(db.routes_table.c.location in user_locations)).fetchall()
+    
+        for row in routes:            
+            route_style = [k for (k, v) in 
+                           [("Boulder", row.boulder), ("TD", row.td), ("Ice", row.ice), ("Trad", row.trad), ("Sport", row.sport), 
+                            ("Aid", row.aid), ("Mixed", row.mixed), ("Snow", row.snow), ("Alpine", row.alpine)] if v is True]
+
+            
+            recommended_routes.append(
+                {
+                "route_id" : row.route_id,
+                "name": row.route_name,
+                "location": row.location,
+                "grade": row.French,
+                "style": route_style,
+                "description": row.description
+                }
+            )
+    
+    return recommended_routes
+    
+
+@router.post("/add")
 def create_route(new_route: Route):
     """
     Create New Climbing Route 

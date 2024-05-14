@@ -97,15 +97,26 @@ Response:
 Searches and recommends climbing routes based on the user_id's information and sorts by
 relevance
 
+Request:
+
+```json
+{
+    "user_id": "int"
+}
+```
+
+Response:
+
 ```json
 {
     "routes": [
         {
+            "route_id" : "int",
             "name": "string",
             "location": "string",
-            "difficulty_level": "string",
+            "grade": "string",
             "style": "string",
-            "gear_requirements": ["string"]
+            "description": "string"
         }
     ]
 }
