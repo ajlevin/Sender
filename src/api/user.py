@@ -23,31 +23,30 @@ def create_user(new_profile: User):
     Create New Climbing User 
     """
     insert_user_row = """
-    INSERT INTO users (user_id, name, email, age) 
-    VALUES(:user_id, :profile_name, :profile_email, :profile_age) returning user_id
-    """
-
-    get_max_user_id_query = """
-    SELECT MAX(user_id) AS max_user_id FROM users
+    INSERT INTO users (name, email, age) 
+    VALUES(:name, :email, :age) returning user_id
     """
 
     try:
         with db.engine.begin() as connection:
-            max_user_id = connection.execute(sqlalchemy.text(get_max_user_id_query)).fetchone()
-            user_id = max_user_id.max_user_id
-            
-            user_insert = connection.execute(sqlalchemy.text(insert_user_row), 
-                                        {
-                                        "user_id": user_id + 1,
-                                        "profile_name": new_profile.name, 
-                                        "profile_email": new_profile.email,
-                                        "profile_age": new_profile.age
-                                        })
+            result = connection.execute(
+                sqlalchemy.text(insert_user_row),
+                {
+                    "name": new_profile.name,
+                    "email": new_profile.email,
+                    "age": new_profile.age
+                }
+            ).fetchone()
+
+            if result:
+                user_id = result.user_id
+            else:
+                raise sqlalchemy.HTTPException(status_code=500, detail="Failed to retrieve user ID after insertion.")
             
 
         return {
             "success": True,
-            "user_id": user_id + 1
+            "user_id": user_id
             }
     except Exception as e:
         return {"success": False, "error_message": str(e)}
