@@ -32,9 +32,7 @@ def create_climb_log(log_entry: Climb):
     VALUES(:user_id, :route_id, :frequency, :intensity, :heart_rate, :systolic_pressure, :diastolic_pressure)
     """
     try:
-        with db.engine.begin() as connection:
-            climb_row = connection.execute(sqlalchemy.text(insert_climb_row), 
-                                        {
+        climb_row_dictionary =      {
                                         "user_id": log_entry.user_id, 
                                         "route_id": log_entry.route_id,
                                         "frequency": log_entry.frequency,
@@ -42,13 +40,14 @@ def create_climb_log(log_entry: Climb):
                                         "heart_rate": log_entry.heart_rate,
                                         "systolic_pressure": log_entry.systolic_pressure,
                                         "diastolic_pressure": log_entry.diastolic_pressure
-                                        })
+                                    }
 
-        return {
-            "success": True,
-            }
-    except Exception as e:
-        return {"success": False, "error_message": str(e)}
+        with db.engine.begin() as connection:
+            connection.execute(sqlalchemy.text(insert_climb_row), climb_row_dictionary)
+
+        return {"success": True}
+    except:
+        return {"success": False}
     
 
 @router.get("/history/{user_id}")
@@ -65,20 +64,17 @@ def get_user_history(user_id: int):
         sqlalchemy.select(db.climbing_table).where(db.climbing_table.c.user_id == user_id)
         ).fetchall()
 
-        # To Do:
-        # Join Route & Climbing table to give more info about the specific route rather than just route_id
-
         for row in result:
-            All_Climbs.append(
-                {
-                'date': row.created_at,
-                'route_id': row.route_id,
-                'frequency': row.frequency,
-                'intensity': row.intensity,
-                'heart_rate': row.heart_rate,
-                'systolic_pressure': row.systolic_pressure,
-                'diastolic_pressure': row.diastolic_pressure
-                }
-            )
+            user_climb =  {
+                            'date': row.created_at,
+                            'route_id': row.route_id,
+                            'frequency': row.frequency,
+                            'intensity': row.intensity,
+                            'heart_rate': row.heart_rate,
+                            'systolic_pressure': row.systolic_pressure,
+                            'diastolic_pressure': row.diastolic_pressure
+                            }
 
+            All_Climbs.append(user_climb)
+            
     return All_Climbs

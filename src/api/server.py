@@ -1,7 +1,7 @@
 from fastapi import FastAPI, exceptions
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
-from src.api import user, admin, climbing, routes
+from src.api import user, climbing, routes
 import json
 import logging
 import sys

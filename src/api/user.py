@@ -23,34 +23,27 @@ def create_user(new_profile: User):
     Create New Climbing User 
     """
     insert_user_row = """
-    INSERT INTO users (user_id, name, email, age) 
-    VALUES(:user_id, :profile_name, :profile_email, :profile_age) returning user_id
+    INSERT INTO users (name, email, age) 
+    VALUES(:profile_name, :profile_email, :profile_age) returning user_id
     """
 
-    get_max_user_id_query = """
-    SELECT MAX(user_id) AS max_user_id FROM users
-    """
+    insert_user_dictionary ={
+                                "profile_name": new_profile.name, 
+                                "profile_email": new_profile.email,
+                                "profile_age": new_profile.age
+                            }
 
     try:
         with db.engine.begin() as connection:
-            max_user_id = connection.execute(sqlalchemy.text(get_max_user_id_query)).fetchone()
-            user_id = max_user_id.max_user_id
+            user_id = connection.execute(sqlalchemy.text(insert_user_row), insert_user_dictionary).scalar_one()
             
-            user_insert = connection.execute(sqlalchemy.text(insert_user_row), 
-                                        {
-                                        "user_id": user_id + 1,
-                                        "profile_name": new_profile.name, 
-                                        "profile_email": new_profile.email,
-                                        "profile_age": new_profile.age
-                                        })
-            
-
         return {
             "success": True,
-            "user_id": user_id + 1
+            "user_id": user_id
             }
-    except Exception as e:
-        return {"success": False, "error_message": str(e)}
+    
+    except:
+        return {"success": False}
 
 
 @router.put("/user/{user_id}")
@@ -60,18 +53,19 @@ def update_user(user_id: int, altered_user: User):
     SET name = :updated_name, email = :updated_email, age = :updated_age 
     WHERE user_id = :user_id
     """
-    try:
-        with db.engine.begin() as connection:
-            connection.execute(sqlalchemy.text(update_user_row),
-                               {
+
+    update_user_dicitonary =    {
                                    "updated_name": altered_user.name,
                                    "updated_email": altered_user.email,
                                    "updated_age": altered_user.age,
                                    "user_id": user_id
-                               })
+                                }
+    try:
+        with db.engine.begin() as connection:
+            connection.execute(sqlalchemy.text(update_user_row), update_user_dicitonary)
+            
         return {"success": True}
-    
-    except Exception as e:
-        return {"success": False, "error_message": str(e)}
+    except:
+        return {"success": False}
 
 

@@ -17,9 +17,9 @@ def get_state(lon, lat):
 
 # Fetch routes with longitude and latitude
 with db.engine.connect() as connection:
-    result = connection.execute(sqlalchemy.text("""SELECT route_id, longitude, latitude 
+    result = connection.execute(sqlalchemy.text("""SELECT route_id, route_lon, route_lat 
                                                 FROM routes 
-                                                WHERE longitude IS NOT NULL AND latitude IS NOT NULL"""))
+                                                WHERE route_lon IS NOT NULL AND route_lat IS NOT NULL"""))
     routes = result.fetchall()
 
 # Map each route to a state and insert into route_states table
