@@ -30,7 +30,19 @@ create table
     systolic_pressure integer null,
     diastolic_pressure integer null,
     created_at timestamp with time zone not null default now(),
-    constraint climbing_pkey primary key (climb_id),
-    constraint climbing_profile_id_fkey foreign key (profile_id) references profile (profile_id) on update cascade on delete cascade,
-    constraint climbing_route_id_fkey foreign key (route_id) references routes (route_id) on update cascade on delete cascade
+    constraint climbing_pkey primary key (climbing_id),
+    constraint climbing_route_id_fkey foreign key (route_id) references routes (route_id) on update cascade on delete cascade,
+    constraint climbing_user_id_fkey foreign key (user_id) references users (user_id) on update cascade on delete cascade
+  ) tablespace pg_default;
+
+create table
+  public.ratings (
+    user_id bigint not null,
+    route_id bigint not null,
+    rating real null,
+    created_at timestamp with time zone null,
+    rating_id bigint not null,
+    constraint ratings_pkey primary key (rating_id),
+    constraint ratings_route_id_fkey foreign key (route_id) references routes (route_id) on update cascade on delete cascade,
+    constraint ratings_user_id_fkey foreign key (user_id) references users (user_id) on update cascade on delete cascade
   ) tablespace pg_default;
