@@ -46,7 +46,7 @@ create table
     constraint climbing_user_id_fkey foreign key (user_id) references users (user_id) on update cascade on delete cascade
   ) tablespace pg_default;
 
-  create table
+create table
   public.ratings (
     user_id bigint not null,
     route_id bigint not null,

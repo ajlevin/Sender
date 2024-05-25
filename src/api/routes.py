@@ -29,34 +29,46 @@ def recommend_route(user_id: int):
     Recommend Climbing Routes for A Specific User
     """
     recommended_routes = []
-    user_locations = []
+    last_lat = None
+    last_lon = None
 
     with db.engine.begin() as connection:
-        user_route_history = connection.execute(
-            sqlalchemy.select(db.climbing_table).where(db.climbing_table.c.user_id == user_id)).fetchall()
-        
-        user_route_history = connection.execute(sqlalchemy.text(
+        recent_user_routes = connection.execute(sqlalchemy.text(
             """
-            SELECT routes.location
+            SELECT routes.route_lat, routes.route_lon
             FROM routes
             INNER JOIN climbing ON routes.route_id = climbing.route_id
-            WHERE climbing.user_ud = :user_id
-            ORDER BY routes.French
+            WHERE climbing.user_id = :user_id
+            ORDER BY climbing.created_at DESC
+            LIMIT 1
             """),
             [{
                 "user_id": user_id
             }])
-        
-        for route in user_route_history:
-            user_locations.append(route.location)    
 
-        routes = connection.execute(
-            sqlalchemy.select(db.routes_table).where(db.routes_table.c.location in user_locations)).fetchall()
-    
-        for row in routes:            
+        for route in recent_user_routes:
+            last_lat = route.route_lan
+            last_lon = route.route_lon
+
+        if last_lat is None or last_lon is None:
+            return recommended_routes
+
+        suggested_routes = connection.execute(
+            sqlalchemy.text(
+                """
+                SELECT *
+                FROM routes
+                ORDER BY ABS(route_lat - :last_lat) + ABS(route_lon - :last_lon) ASC
+                LIMIT 30
+                """),
+                [{
+                    "last_lat": last_lat,
+                    "last_lon": last_lon,
+                }])
+
+        for row in suggested_routes:            
             route_style = [k for (k, v) in 
                            [("Trad", row.trad), ("Sport", row.sport), ("Other", row.other)] if v is True]
-
             
             recommended_routes.append(
                 {
