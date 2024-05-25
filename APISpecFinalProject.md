@@ -2,7 +2,7 @@
 
 #### 1. User Profile Management
 
-##### 1.1. Create User Profile - `/profile/create` (POST)
+##### 1.1. Create User Profile - `/user/create` (POST)
 
 Creates a new user profile with basic information such as name, email, and age.
 
@@ -24,7 +24,7 @@ Response:
 }
 ```
 
-##### 1.2. Update User Profile - /profile/{user_id} (PUT)
+##### 1.2. Update User Profile - /user/{user_id} (PUT)
 Updates the user's profile information.
 
 Request:
@@ -53,15 +53,13 @@ Request:
 
 ```json
 {
-  "user_id": "string",
+  "user_id": "integer",
+  "route_id": "integer",
   "frequency": "integer",
   "intensity": "integer",
-  "grades": ["string"],
   "heart_rate": "integer",
-  "blood_pressure": {
-    "systolic": "integer",
-    "diastolic": "integer"
-  }
+  "systolic_pressure": "integer",
+  "diastolic_pressure": "integer"
 }
 ```
 Response:
@@ -79,17 +77,15 @@ Response:
 
 ```json
 {
-    "sessions": [
+   [
         {
-            "date": "string",
-            "frequency": "integer",
-            "intensity": "integer",
-            "grades": ["string"],
-            "heart_rate": "integer",
-            "blood_pressure": {
-                "systolic": "integer",
-                "diastolic": "integer"
-            }
+        "user_id": "integer",
+        "route_id": "integer",
+        "frequency": "integer",
+        "intensity": "integer",
+        "heart_rate": "integer",
+        "systolic_pressure": "integer",
+        "diastolic_pressure": "integer"
         }
     ]
 }
@@ -101,15 +97,26 @@ Response:
 Searches and recommends climbing routes based on the user_id's information and sorts by
 relevance
 
+Request:
+
+```json
+{
+    "user_id": "int"
+}
+```
+
+Response:
+
 ```json
 {
     "routes": [
         {
+            "route_id" : "int",
             "name": "string",
             "location": "string",
-            "difficulty_level": "string",
+            "grade": "string",
             "style": "string",
-            "gear_requirements": ["string"]
+            "description": "string"
         }
     ]
 }
@@ -123,11 +130,28 @@ Request:
 
 ```json
 {
-  "name": "string",
+  "route_name": "string",
   "location": "string",
-  "difficulty_level": "string",
-  "style": "string",
-  "gear_requirements": ["string"]
+  "YDS": "string",
+  "Font": "string",
+  "French": "string",
+  "Ewbanks": "string",
+  "UIAA": "string",
+  "ZA": "string",
+  "British": "string",
+  "yds_aid": "string",
+  "boulder": "boolean",
+  "tr": "boolean",
+  "ice": "boolean",
+  "trad": "boolean",
+  "sport": "boolean",
+  "aid": "boolean",
+  "mixed": "boolean",
+  "snow": "boolean",
+  "alpine": "boolean",
+  "fa": "str",
+  "description": "string",
+  "protection": "string"
 }
 ```
 
@@ -135,7 +159,8 @@ Response:
 
 ```json
 {
-    "success": "boolean"
+    "success": "boolean",
+    "route_id": "int"
 }
 ```
 

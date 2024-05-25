@@ -89,21 +89,49 @@ def create_route(new_route: Route):
     Create New Climbing Route 
     """
     insert_route_row = """
-    INSERT INTO routes (name, location, difficulty_level, style) 
-    VALUES(:name, :location, :difficulty_level, :style)
+    INSERT INTO routes (
+        route_name, 
+        location, 
+        yds,
+        trad,
+        sport,
+        other,
+        description,
+        protection,
+        route_lat,
+        route_lon
+        ) 
+    VALUES(
+        :name, 
+        :location, 
+        :yds,
+        :trad,
+        :sport,
+        :other,
+        :description,
+        :protection,
+        :route_lat,
+        :route_lon
+        )
+    RETURNING route_id
     """
     try:
         with db.engine.begin() as connection:
-            new_route = connection.execute(sqlalchemy.text(insert_route_row), 
-                                        {
+            insert_route_dictionary = {
                                         "name": new_route.route_name, 
-                                        "location": new_route.route_location,
-                                        "difficulty_level": new_route.difficulty_level,
-                                        "style": new_route.style
-                                        })
-        return {
-            "success": True,
-            }
-    
-    except Exception as e:
-        return {"success": False, "error_message": str(e)}
+                                        "location": new_route.location,
+                                        "yds": new_route.yds,
+                                        "trad": new_route.trad,
+                                        "sport": new_route.sport,
+                                        "other": new_route.other,
+                                        "description": new_route.description,
+                                        "protection": new_route.protection,
+                                        "route_lat": new_route.route_lat,
+                                        "route_lon": new_route.route_lon
+                                        }
+
+            route_id = connection.execute(sqlalchemy.text(insert_route_row), insert_route_dictionary).scalar_one()
+
+        return {"success": True, "route_id": route_id}
+    except:
+        return {"success": False}

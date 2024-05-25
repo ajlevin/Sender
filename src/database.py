@@ -12,6 +12,6 @@ def database_connection_url():
 engine = create_engine(database_connection_url(), pool_pre_ping=True)
 
 metadata_obj = sqlalchemy.MetaData()
-profile_table = sqlalchemy.Table("profile", metadata_obj, autoload_with= db.engine)
+users_table = sqlalchemy.Table("users", metadata_obj, autoload_with= db.engine)
 climbing_table = sqlalchemy.Table("climbing", metadata_obj, autoload_with= db.engine)
 routes_table = sqlalchemy.Table("routes", metadata_obj, autoload_with= db.engine)
