@@ -165,7 +165,7 @@ def get_routes(
     sort_order: search_sort_order = search_sort_order.desc
     ):
     """
-    Recommend Climbing Routes for A Specific User
+    View Climbing Routes with (Optional) Filtering Options
     """
 
     with db.engine.begin() as connection:        
