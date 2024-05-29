@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from src.api import auth
+from enum import Enum
 import sqlalchemy
 from src import database as db
 
@@ -72,6 +73,15 @@ class Route(BaseModel):
             route_lat = cursorParams.route_lat,
             route_lon = cursorParams.route_lon)
 
+class search_sort_options(str, Enum):
+    route_name = "route_name"
+    location = "location"
+    created_at = "created_at"
+    
+
+class search_sort_order(str, Enum):
+    asc = "asc"
+    desc = "desc"  
 
 @router.get("/recommend")
 def recommend_route(user_id: int):
@@ -141,9 +151,115 @@ def recommend_route(user_id: int):
                 }
             )
     return recommended_routes
-    
 
-@router.post("/add")
+def getRouteStyle(resultEntry):
+    "Trad" if resultEntry.trad else "Sport" if resultEntry.sport else "Other" if resultEntry.other else "N/A"
+
+@router.get("/view")
+def get_routes(
+    route_name: str = "",
+    yds: str = "",
+    location: str = "",
+    search_page: str = "",
+    sort_col: search_sort_options = search_sort_options.timestamp,
+    sort_order: search_sort_order = search_sort_order.desc
+    ):
+    """
+    Recommend Climbing Routes for A Specific User
+    """
+
+    with db.engine.begin() as connection:        
+        metadata_obj = sqlalchemy.MetaData()
+        routes = sqlalchemy.Table('routes', metadata_obj, autoload_with= db.engine)
+        ratings = sqlalchemy.Table('ratings', metadata_obj, autoload_with= db.engine)
+
+        avgRouteRatings = sqlalchemy.select(
+            ratings.route_id,
+            sqlalchemy.sql.func.avg(ratings.rating).label('avgRating')
+        ).select_from(
+            ratings
+        ).group_by(
+            ratings.route_id
+        )
+
+        search_result = sqlalchemy.select(
+            routes.c.route_id,
+            routes.c.yds,
+            routes.c.description,
+            routes.c.location,
+            routes.c.created_at,
+            routes.c.route_name,
+            routes.c.route_lat,
+            routes.c.route_lon,
+            ratings.c.avgRating
+        ).select_from(
+            routes.join(avgRouteRatings, avgRouteRatings.c.route_id == routes.c.route_id)
+        )
+
+        if sort_col is search_sort_options.route_name:
+            sort_parameter = search_result.c.route_name
+        elif sort_col is search_sort_options.location:
+            sort_parameter = search_result.c.location
+        elif sort_col is search_sort_options.created_at:
+            sort_parameter = search_result.c.created_at
+        else:
+            raise RuntimeError("No Sort Parameter Passed")
+        
+        search_values = (
+            sqlalchemy.select(
+                search_result.c.route_id,
+                search_result.c.yds,
+                search_result.c.description,
+                search_result.c.location,
+                search_result.c.created_at,
+                search_result.c.route_name,
+                search_result.c.route_lat,
+                search_result.c.route_lon,
+                search_result.c.avgRating
+            ).select_from(search_result)
+        )
+
+        sorted_values = search_values
+        if route_name != "":
+            sorted_values = sorted_values.where(
+                (search_result.c.route_name.ilike(f"%{route_name}%")))
+        if yds != "":
+            sorted_values = sorted_values.where(
+                (search_result.c.yds.ilike(f"%{yds}%")))
+        if location != "":
+            sorted_values = sorted_values.where(
+                (search_result.c.location.ilike(f"%{location}%")))
+        
+        if sort_order == search_sort_order.desc: 
+            sorted_values = sorted_values.order_by(
+                sqlalchemy.desc(sort_parameter) if sort_order == search_sort_order.desc else sqlalchemy.desc(sort_parameter))
+
+        page = 0 if search_page == "" else int(search_page) * 10
+        result = connection.execute(search_values.limit(10).offset(page))
+        search_return = []
+        for row in result:
+            search_return.append(
+                    {
+                        "route_id": row.route_id,
+                        "yds": row.yds,
+                        "description": row.description,
+                        "location": row.location,
+                        "created_at": row.created_at,
+                        "route_name": row.route_name,
+                        "route_lat": row.route_lat,
+                        "route_lon": row.route_lon,
+                        "avgRating": row.avgRating
+                    })
+        
+        prev_page = f"{int(page/10) - 1}" if int(page/10) >= 1 else ""
+        next_page = f"{int(page/10) + 1}" if (connection.execute(search_values).rowcount - (page)) > 0 else ""
+    
+        return ({
+                "previous": prev_page,
+                "next": next_page,
+                "results": search_return
+            })
+
 @router.post("/add")
 def create_route(new_route: Route):
     """
@@ -197,5 +313,3 @@ def create_route(new_route: Route):
     except:
         return {"success": False}
     
-def getRouteStyle(resultEntry):
-    "Trad" if resultEntry.trad else "Sport" if resultEntry.sport else "Other" if resultEntry.other else "N/A"
