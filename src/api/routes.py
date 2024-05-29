@@ -232,7 +232,7 @@ def get_routes(
         
         if sort_order == search_sort_order.desc: 
             sorted_values = sorted_values.order_by(
-                sqlalchemy.desc(sort_parameter) if sort_order == search_sort_order.desc else sqlalchemy.desc(sort_parameter))
+                sqlalchemy.desc(sort_parameter) if sort_order == search_sort_order.desc else sqlalchemy.asc(sort_parameter))
 
         page = 0 if search_page == "" else int(search_page) * 10
         result = connection.execute(search_values.limit(10).offset(page))
