@@ -191,7 +191,7 @@ def get_routes(
             routes.c.route_name,
             routes.c.route_lat,
             routes.c.route_lon,
-            ratings.c.avgRating
+            avgRouteRatings.c.avgRating
         ).select_from(
             routes.join(avgRouteRatings, avgRouteRatings.c.route_id == routes.c.route_id)
         )
