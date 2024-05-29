@@ -161,7 +161,7 @@ def get_routes(
     yds: str = "",
     location: str = "",
     search_page: str = "",
-    sort_col: search_sort_options = search_sort_options.timestamp,
+    sort_col: search_sort_options = search_sort_options.created_at,
     sort_order: search_sort_order = search_sort_order.desc
     ):
     """
