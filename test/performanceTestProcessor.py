@@ -1,8 +1,6 @@
 from fastapi import APIRouter, Depends
-from pydantic import BaseModel
 from src.api import auth
 import sqlalchemy
-from src import database as db
 import os
 import dotenv
 from faker import Faker
@@ -36,7 +34,7 @@ def populateTestData():
             "5.13c",  "5.13d",  "5.14a",  "5.14b", "5.14c", "5.14d", "5.15a", "5.15b", "5.15c", "5.15d"]
     
     resetTables()
-    generateData()
+    generateData(grades=grades)
 
 ### WARNING: This does drop tables, so ensure this is using a LOCAL test database before running.
 def resetTables(bypass_confirmation = False):
@@ -121,7 +119,7 @@ def resetTables(bypass_confirmation = False):
             ) tablespace pg_default;
         """))
 
-def generateData(bypass_confirmation = False, iters = 1000000):
+def generateData(grades, bypass_confirmation = False, iters = 1000000):
     # A user inputted confirmation is prompted unless bypassed by `bypass_confirmation`
     if not bypass_confirmation:
         confirmation = input(
