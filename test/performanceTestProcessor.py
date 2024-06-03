@@ -269,8 +269,8 @@ def mockParams():
 
     ### Mocked for create_climb_log
     paramDict["ccl"] = Climb(
-        user_id=testUserIds[fake.pyint(0, len(testUserIds) - 1)],
-        route_id=testRouteIds[fake.pyint(0, len(testRouteIds) - 1)],
+        user_id=int(testUserIds[fake.pyint(0, len(testUserIds) - 1)]),
+        route_id=int(testRouteIds[fake.pyint(0, len(testRouteIds) - 1)]),
         frequency=fake.pyint(0, 10),
         intensity=fake.pyint(0, 100),
         heart_rate=fake.pyint(60, 180),
@@ -279,10 +279,10 @@ def mockParams():
     )
 
     ### Mocked for get_user_history
-    paramDict["guh"] = testUserIds[fake.pyint(0, len(testUserIds) - 1)]
+    paramDict["guh"] = int(testUserIds[fake.pyint(0, len(testUserIds) - 1)])
 
     ### Mocked for recommend_route
-    paramDict["rr"] = testUserIds[fake.pyint(0, len(testUserIds) - 1)]
+    paramDict["rr"] = int(testUserIds[fake.pyint(0, len(testUserIds) - 1)])
 
     ### Mocked for get_routes
     paramDict["gr"] = ("5.11c", str(fake.pyint(0, 5)))
@@ -313,7 +313,7 @@ def mockParams():
     ### Mocked for update_user
     uuProfile = fake.profile()
     paramDict["uu"] = (
-        testUserIds[fake.pyint(0, len(testUserIds) - 1)], 
+        int(testUserIds[fake.pyint(0, len(testUserIds) - 1)]), 
         User(
             name=uuProfile["name"],
             email=uuProfile["mail"],
