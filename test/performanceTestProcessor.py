@@ -7,6 +7,10 @@ import os
 import dotenv
 from faker import Faker
 import numpy as np
+from timeit import timeit
+from src.api.climbing import *
+from src.api.routes import *
+from src.api.user import *
 
 router = APIRouter(
     prefix="/testing",
@@ -23,18 +27,19 @@ def database_connection_url():
     DB_NAME: str = os.environ.get("POSTGRES_DB")
     return f"postgresql://{DB_USER}:{DB_PASSWD}@{DB_SERVER}:{DB_PORT}/{DB_NAME}"
 
+engine = sqlalchemy.create_engine(database_connection_url(), use_insertmanyvalues=True)
+
 def populateTestData():
     # Create new DB engine based on connection string
-    engine = sqlalchemy.create_engine(database_connection_url(), use_insertmanyvalues=True)
     grades = ["5.0", "5.1", "5.2", "5.3", "5.4", "5.5", "5.6", "5.7", "5.8", "5.9", "5.10a", "5.10b", "5.10c", 
             "5.10d", "5.11a", "5.11b", "5.11c",  "5.11d", "5.12a", "5.12b", "5.12c", "5.12d", "5.13a", "5.13b", 
             "5.13c",  "5.13d",  "5.14a",  "5.14b", "5.14c", "5.14d", "5.15a", "5.15b", "5.15c", "5.15d"]
     
-    resetTables(engine=engine)
-    generateData(engine=engine, grades=grades)
+    resetTables()
+    generateData()
 
 ### WARNING: This does drop tables, so ensure this is using a LOCAL test database before running.
-def resetTables(engine, bypass_confirmation = False):
+def resetTables(bypass_confirmation = False):
     # A user inputted confirmation is prompted unless bypassed by `bypass_confirmation`
     if not bypass_confirmation:
         confirmation = input(
@@ -116,7 +121,7 @@ def resetTables(engine, bypass_confirmation = False):
             ) tablespace pg_default;
         """))
 
-def generateData(engine, grades, bypass_confirmation = False, iters = 1000000):
+def generateData(bypass_confirmation = False, iters = 1000000):
     # A user inputted confirmation is prompted unless bypassed by `bypass_confirmation`
     if not bypass_confirmation:
         confirmation = input(
@@ -138,9 +143,16 @@ def generateData(engine, grades, bypass_confirmation = False, iters = 1000000):
     yds_sample_distribution = np.random.choice(grades, iters, p = np.random.dirichlet(np.ones(34),size=1)[0])
 
     with engine.begin() as conn:
+        # Clears storage files (and creates them if they don't already exist)
+        with open("testUserIds.txt", "a+") as f:
+            f.truncate()
+        with open("testUserIds.txt", "a+") as f:
+            f.truncate()
+        
         print("Faking data...")
         logs = []
         ratings = []
+        user_ids = []
         route_ids = []
         for i in range(iters):
             if (i % 100 == 0):
@@ -155,22 +167,24 @@ def generateData(engine, grades, bypass_confirmation = False, iters = 1000000):
              "email": profile['mail'], 
              "age": fake.pyint(18, 75), 
              "created_at": fake.date_time_between(start_date='-8y', end_date='-2y', tzinfo=None)}).scalar_one()
+            user_ids.append(user_id)
 
+            isTrad = fake.boolean(50)
             route_id = conn.execute(sqlalchemy.text(
                 """
                 INSERT INTO routes (yds, sport, trad, description, location, protection, created_at, route_name, route_lat, route_lon, state_name) 
                 VALUES (:yds, :sport, :trad, :description, :location, :protection, :created_at, :route_name, :route_lat, :route_lon, :state_name) RETURNING route_id;
                 """), 
             {"yds": yds_sample_distribution[i].item(), 
-             "trad": fake.boolean(50), 
-             "sport": fake.boolean(50),
+             "trad": isTrad, 
+             "sport": not isTrad,
              "description": fake.text(), 
-             "location": fake.location_on_land(),
+             "location": fake.place_name(),
              "protection": fake.sentence(), 
              "created_at": fake.date_time_between(start_date='-8y', end_date='now', tzinfo=None),
              "route_name": fake.name(), 
-             "route_lat": fake.latitude(), 
-             "route_lon": fake.longitude(), 
+             "route_lat": str(fake.latitude()), 
+             "route_lon": str(fake.longitude()), 
              "state_name": fake.state()}).scalar_one()   
             route_ids.append(route_id)         
 
@@ -183,7 +197,7 @@ def generateData(engine, grades, bypass_confirmation = False, iters = 1000000):
                     "frequency": 3,
                     "intensity": fake.pyint(0, 100),
                     "route_id": route_ids[fake.pyint(0, len(route_ids) - 1)],
-                    "heart_rate": fake.pyint(),
+                    "heart_rate": fake.pyint(60, 180),
                     "systolic_pressure": fake.pyint(60, 140),
                     "diastolic_pressure": fake.pyint(20, 90),
                     "created_at": fake.date_time_between(start_date='-5y', end_date='now', tzinfo=None),
@@ -208,5 +222,103 @@ def generateData(engine, grades, bypass_confirmation = False, iters = 1000000):
             INSERT INTO ratings (user_id, route_id, rating, created_at) VALUES (:user_id, :route_id, :rating, :created_at);
             """), logs)
 
+        with open("testUserIds.txt", "a+") as f:
+            for id in user_ids:
+                f.write(str(id) + "\n")
+            print("Test user IDs saved to testUserIds.txt")
+
+        with open("testUserIds.txt", "a+") as f:
+            for id in route_ids:
+                f.write(str(id) + "\n")
+            print("Test route IDs saved to testRouteIds.txt")
+        
         print("total logs: ", total_logs)
         print("total ratings: ", total_ratings)
+
+def runMetrics():
+    mocked = mockParams()
+    
+    print(f"create_climb_log runtime: {timeit(create_climb_log(mocked.get("ccl"))):.3f}")
+    print(f"get_user_history runtime: {timeit(get_user_history(mocked.get("guh"))):.3f}")
+    print(f"recommend_route runtime: {timeit(recommend_route(mocked.get("rr"))):.3f}")
+    print(f"get_routes runtime: {timeit(get_routes(mocked.get("gr"))):.3f}")
+    print(f"create_route runtime: {timeit(create_route(mocked.get("cr"))):.3f}")
+    print(f"create_user runtime: {timeit(create_user(mocked.get("cu"))):.3f}")
+    print(f"update_user runtime: {timeit(update_user(mocked.get("uu"))):.3f}")
+
+def mockParams():
+    testUserIds = []
+    testRouteIds = []
+    try:
+        with open("testUserIds.txt", "r") as f:
+            testUserIds = f.readlines()
+        with open("testUserIds.txt", "r") as f:
+            testRouteIds = f.readlines()
+    except IOError:
+        print("Test ID files do not exist. Please rerun a generation request.")
+        exit()
+    
+    fake = Faker()
+    paramDict = {
+        "ccl" : None,
+        "guh" : None,
+        "rr" : None,
+        "gr" : None,
+        "cr" : None,
+        "cu" : None,
+        "uu" : None,
+    }
+
+    ### Mocked for create_climb_log
+    paramDict["ccl"] = Climb(
+        user_id=testUserIds[fake.pyint(0, len(testUserIds) - 1)],
+        route_id=testRouteIds[fake.pyint(0, len(testRouteIds) - 1)],
+        frequency=fake.pyint(0, 10),
+        intensity=fake.pyint(0, 100),
+        heart_rate=fake.pyint(60, 180),
+        systolic_pressure=fake.pyint(60, 140),
+        diastolic_pressure=fake.pyint(20, 90)
+    )
+
+    ### Mocked for get_user_history
+    paramDict["guh"] = testUserIds[fake.pyint(0, len(testUserIds) - 1)]
+
+    ### Mocked for recommend_route
+    paramDict["rr"] = testUserIds[fake.pyint(0, len(testUserIds) - 1)]
+
+    ### Mocked for get_routes
+    paramDict["gr"] = ("5.11c", str(fake.pyint(0, 5)))
+
+    ### Mocked for create_route
+    isTrad = fake.boolean(50)
+    paramDict["cr"] = Route(
+        route_name=fake.name(),
+        location=fake.place_name(),
+        yds="5.11c",
+        trad=isTrad,
+        sport=not isTrad,
+        other=False,
+        description=fake.text(),
+        protection=fake.sentence(),
+        route_lat=str(fake.latitude()),
+        route_lon=str(fake.longitude())
+    )
+
+    ### Mocked for create_user
+    cuProfile = fake.profile()
+    paramDict["cu"] = User(
+        name=cuProfile["name"],
+        email=cuProfile["mail"],
+        age=fake.pyint(18, 75)
+    )
+
+    ### Mocked for update_user
+    uuProfile = fake.profile()
+    paramDict["uu"] = (
+        testUserIds[fake.pyint(0, len(testUserIds) - 1)], 
+        User(
+            name=uuProfile["name"],
+            email=uuProfile["mail"],
+            age=fake.pyint(18, 75)))
+
+    return paramDict

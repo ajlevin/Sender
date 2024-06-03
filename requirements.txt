@@ -8,3 +8,4 @@ pre-commit
 geopandas
 faker
 numpy
+timeit
