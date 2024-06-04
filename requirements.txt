@@ -8,4 +8,6 @@ pre-commit
 geopandas
 faker
 numpy
-timeit
+passlib 
+pyjwt
+jose
