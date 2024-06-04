@@ -48,7 +48,7 @@ def get_leaderboard(query_params: LeaderboardQueryParams = Depends()):
     else: 
         order_clause = "ORDER BY hardest_grade DESC, total_climbs DESC"
     
-    query = f"{base_query} {order_clause} {"LIMIT 10"};"
+    query = f"{base_query} {order_clause} LIMIT 10;"
     
     try:
         with db.engine.begin() as connection:
