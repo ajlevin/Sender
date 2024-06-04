@@ -1,10 +1,15 @@
 from fastapi import APIRouter, HTTPException, Depends
+from src.api import auth
 from sqlalchemy import text
 from pydantic import BaseModel, Field
 from enum import Enum
 from src import database as db
 
-router = APIRouter()
+router = APIRouter(
+    prefix="/leaderboard",
+    tags=["leaderboard"],
+    dependencies=[Depends(auth.get_api_key)],
+)
 
 class SortOptions(str, Enum):
     total_climbs = "total_climbs"
@@ -63,6 +68,5 @@ def get_leaderboard(query_params: LeaderboardQueryParams = Depends()):
             "leaderboard": leaderboard
         }
 
-    except Exception as e:
-        print(e)
-        return {"success": False, "error_message": 'error'}
+    except:
+        return {"success": False}

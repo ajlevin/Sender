@@ -1,6 +1,6 @@
 import geopandas as gpd
 from shapely.geometry import Point
-from src import database as db
+import database as db
 import sqlalchemy
 
 # Load state boundaries

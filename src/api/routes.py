@@ -4,6 +4,7 @@ from src.api import auth
 from enum import Enum
 import sqlalchemy
 from src import database as db
+import numpy as np
 
 router = APIRouter(
     prefix="/routes",
@@ -62,9 +63,9 @@ class Route(BaseModel):
 
     def fromCursorObject(cursorParams):
         return Route(
-            route_name = cursorParams.name,
+            route_name = cursorParams.route_name,
             location = cursorParams.location,
-            yds = cursorParams.difficulty_level,
+            yds = cursorParams.yds,
             trad = cursorParams.trad,
             sport = cursorParams.sport,
             other = cursorParams.other,
@@ -96,10 +97,10 @@ def recommend_route(user_id: int):
     with db.engine.begin() as connection:
         recent_user_routes = connection.execute(sqlalchemy.text(
             """
-            SELECT routes.route_lat, routes.route_lon, routes.trad, routes.sport, routes.other, routes.yds
+            SELECT routes.route_name, routes.location, routes.description, routes.protection, routes.route_lat, routes.route_lon, routes.trad, routes.sport, routes.other, routes.yds
             FROM routes
             INNER JOIN climbing ON routes.route_id = climbing.route_id
-            WHERE climbing.user_id = :user_id
+            WHERE climbing.user_id = :user_id and routes.route_lon is not NULL and routes.route_lat is not NULL
             ORDER BY climbing.created_at DESC
             LIMIT 30
             """),
@@ -113,7 +114,8 @@ def recommend_route(user_id: int):
         if len(user_route_record) == 0:
             return recommended_routes  
         last_lat = user_route_record[0].route_lat
-        last_lat = user_route_record[0].route_lat   
+        last_lon = user_route_record[0].route_lon   
+        user_grades = list(r.yds for r in user_route_record)
 
         suggested_routes = connection.execute(
             sqlalchemy.text(
@@ -126,15 +128,15 @@ def recommend_route(user_id: int):
                 SELECT *
                 FROM routes
                 INNER JOIN avgRouteRating ON avgRouteRating.route_id = routes.route_id
-                WHERE routes.yds IN :user_grades
-                ORDER BY ROUND(ABS(routes.route_lat - :last_lat) + ABS(routes.route_lon - :last_lon), 1) ASC, 
+                WHERE routes.yds IN :user_grades and routes.route_lon is not Null and routes.route_lat is not Null
+                ORDER BY ROUND(ABS(CAST(routes.route_lat AS NUMERIC) - :last_lat) + ABS(CAST(routes.route_lon AS NUMERIC) - :last_lon), 1) ASC, 
                     avgRouteRating.avgRating DESC
                 LIMIT 30
                 """),
                 [{
-                    "last_lat": last_lat,
-                    "last_lon": last_lon,
-                    "user_grades": (r.yds for r in user_route_record)
+                    "last_lat": float(last_lat),
+                    "last_lon": float(last_lon),
+                    "user_grades": tuple(user_grades)
                 }])
 
         for row in suggested_routes:            
@@ -174,12 +176,12 @@ def get_routes(
         ratings = sqlalchemy.Table('ratings', metadata_obj, autoload_with= db.engine)
 
         avgRouteRatings = sqlalchemy.select(
-            ratings.route_id,
-            sqlalchemy.sql.func.avg(ratings.rating).label('avgRating')
+            ratings.c.route_id,
+            sqlalchemy.sql.func.avg(ratings.c.rating).label('avgRating')
         ).select_from(
             ratings
         ).group_by(
-            ratings.route_id
+            ratings.c.route_id
         )
 
         search_result = sqlalchemy.select(
@@ -292,6 +294,16 @@ def create_route(new_route: Route):
         )
     RETURNING route_id
     """
+    Grade_conv_bool = False
+    for key in GRADE_CONVERSION.keys():
+        if key in new_route.yds:
+            new_route.yds = GRADE_CONVERSION[key]
+            Grade_conv_bool = True
+            break
+    
+    if not Grade_conv_bool:
+        new_route.yds = None
+        
     try:
         with db.engine.begin() as connection:
             insert_route_dictionary = {
