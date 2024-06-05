@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel
 from src.api import auth
 import sqlalchemy
@@ -29,6 +29,24 @@ class UserUpdate(BaseModel):
 
 pwd_context = CryptContext(schemes=["sha256_crypt"], deprecated="auto")
 
+def authenticateUser(user_id: int, user_login: UserLogin):
+    user_query = """
+    SELECT user_id, name, email, password 
+    FROM users 
+    WHERE email = :email AND user_id = :user_id
+    """
+    with db.engine.begin() as connection:
+        user = connection.execute(sqlalchemy.text(user_query), {"email": user_login.email, "user_id": user_id}).fetchone()
+
+        if not user:
+            raise HTTPException(status_code=401, detail="Invalid email or password")
+            
+        verify_password = lambda plain_password, hashed_password: pwd_context.verify(plain_password, hashed_password)
+
+        if not verify_password(user_login.password, user.password):
+            raise HTTPException(status_code=401, detail="Invalid email or password")
+        return user
+    
 @router.post("/")
 def create_user(new_profile: User):
     """
@@ -51,50 +69,18 @@ def create_user(new_profile: User):
     try:
         with db.engine.begin() as connection:
             user_id = connection.execute(sqlalchemy.text(insert_user_row), insert_user_dictionary).scalar_one()
-            
-        access_token = auth.create_access_token(data={"sub": new_profile.email})
-        auth.api_keys.append(access_token)
         
         return {
             "success": True,
-            "user_id": user_id,
-            "access_token": access_token,
-            "token_type": "bearer"
+            "user_id": user_id
             }
     
     except:
         return {"success": False}
 
-@router.post("/login/{user_id}")
-def login_user(user_id: int, user_login: UserLogin):
-    user_query = """
-    SELECT user_id, name, email, password 
-    FROM users 
-    WHERE email = :email AND user_id = :user_id
-    """
-    try:
-        with db.engine.begin() as connection:
-            user = connection.execute(sqlalchemy.text(user_query), {"email": user_login.email, "user_id": user_id}).fetchone()
-        print(user)
-
-        if not user:
-            raise HTTPException(status_code=401, detail="Invalid email or password")
-        
-        verify_password = lambda plain_password, hashed_password: pwd_context.verify(plain_password, hashed_password)
-
-        if not verify_password(user_login.password, user.password):
-            raise HTTPException(status_code=401, detail="Invalid email or password")
-        
-
-        access_token = auth.create_access_token(data={"sub": user.email, "user_id": user.user_id})
-        return {"success": True, "access_token": access_token, "token_type": "bearer"}
-    except:
-        return {"success": False}
-
 @router.put("/{user_id}")
-def update_user(user_id: int, altered_user: UserUpdate, current_user: auth.TokenData = Depends(auth.get_current_user)):
-    if current_user.user_id != user_id:
-        raise HTTPException(status_code=403, detail="Operation not permitted")
+def update_user(user_id: int, user_login: UserLogin, altered_user: UserUpdate):
+    authenticateUser(user_id, user_login)
 
     update_user_row = """
     UPDATE users 

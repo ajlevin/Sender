@@ -22,27 +22,6 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 class TokenData(BaseModel):
     user_id: Optional[int] = None
 
-def create_access_token(data: dict, expires_delta: timedelta = None):
-    to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.now() + expires_delta
-    else:
-        expire = datetime.now() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
-
-def verify_token(token: str, credentials_exception):
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id: int = payload.get("user_id")
-        email: str = payload.get("sub")
-        if user_id is None or email is None:
-            raise credentials_exception
-        token_data = TokenData(user_id=user_id, email=email)
-    except JWTError:
-        raise credentials_exception
-    return token_data
 
 
 async def get_api_key(request: Request, api_key_header: str = Security(api_key_header)):
@@ -52,11 +31,3 @@ async def get_api_key(request: Request, api_key_header: str = Security(api_key_h
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Forbidden"
         )
-    
-def get_current_user(api_key_header: str = Security(api_key_header)):
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Login Required",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    return verify_token(api_key_header, credentials_exception)
