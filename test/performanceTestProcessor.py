@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends
-from src.api import auth
 import sqlalchemy
 import os
 import dotenv
 from faker import Faker
 import numpy as np
 from timeit import timeit
+from src.api import auth
 from src.api.climbing import *
 from src.api.routes import *
 from src.api.user import *
@@ -262,15 +262,23 @@ def generateData(grades, bypass_confirmation = False, iters = 500000):
 
 def runMetrics():
     mocked = mockParams()
-    
-    print(f"create_climb_log runtime: {timeit(create_climb_log(mocked.get("ccl"))):.3f}")
-    print(f"get_user_history runtime: {timeit(get_user_history(mocked.get("guh"))):.3f}")
-    print(f"recommend_route runtime: {timeit(recommend_route(mocked.get("rr"))):.3f}")
-    print(f"get_routes runtime: {timeit(get_routes(mocked.get("gr"))):.3f}")
-    print(f"create_route runtime: {timeit(create_route(mocked.get("cr"))):.3f}")
-    print(f"create_user runtime: {timeit(create_user(mocked.get("cu"))):.3f}")
-    print(f"update_user runtime: {timeit(update_user(mocked.get("uu"))):.3f}")
-    print(f"get_leaderboard runtime: {timeit(get_leaderboard(mocked.get("gl"))):.3f}")
+    ccl = timeit(create_climb_log(mocked.get("ccl")))
+    guh = timeit(get_user_history(mocked.get("guh")))
+    rr = timeit(recommend_route(mocked.get("rr")))
+    gr = timeit(get_routes(mocked.get("gr")))
+    cr = timeit(create_route(mocked.get("cr")))
+    cu = timeit(create_user(mocked.get("cu")))
+    uu = timeit(update_user(mocked.get("uu")))
+    gl = timeit(get_leaderboard(mocked.get("gl")))
+
+    print(f"create_climb_log runtime: {ccl:.3f}")
+    print(f"get_user_history runtime: {guh:.3f}")
+    print(f"recommend_route runtime: {rr:.3f}")
+    print(f"get_routes runtime: {gr:.3f}")
+    print(f"create_route runtime: {cr:.3f}")
+    print(f"create_user runtime: {cu:.3f}")
+    print(f"update_user runtime: {uu:.3f}")
+    print(f"get_leaderboard runtime: {gl:.3f}")
 
 def mockParams():
     testUserIds = []
