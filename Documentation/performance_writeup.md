@@ -90,23 +90,125 @@ We were able to increase the speed of get_leaderboard very slightly by creating 
 
 ### recommend_route
 #### Explain Results:
+| QUERY PLAN                                                                                                                                           |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Limit  (cost=55.63..55.67 rows=16 width=369) (actual time=1.094..1.099 rows=30 loops=1)                                                              |
+|   ->  Sort  (cost=55.63..55.67 rows=16 width=369) (actual time=1.093..1.096 rows=30 loops=1)                                                         |
+|         Sort Key: climbing.created_at DESC                                                                                                           |
+|         Sort Method: top-N heapsort  Memory: 69kB                                                                                                    |
+|         ->  Nested Loop  (cost=0.71..55.31 rows=16 width=369) (actual time=0.051..0.986 rows=106 loops=1)                                            |
+|               ->  Index Scan using climbing_user_id_idx on climbing  (cost=0.29..13.11 rows=16 width=16) (actual time=0.033..0.371 rows=106 loops=1) |
+|                     Index Cond: (user_id = 30)                                                                                                       |
+|               ->  Index Scan using routes_route_id_key on routes  (cost=0.42..2.64 rows=1 width=369) (actual time=0.005..0.005 rows=1 loops=106)     |
+|                     Index Cond: (route_id = climbing.route_id)                                                                                       |
+|                     Filter: ((route_lon IS NOT NULL) AND (route_lat IS NOT NULL))                                                                    |
+| Planning Time: 1.050 ms                                                                                                                              |
+| Execution Time: 1.178 ms                                                                                                                             |
+
+Query 2:
+| QUERY PLAN                                                                                                                                                            |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Limit  (cost=94497.35..94497.42 rows=30 width=457) (actual time=2004.847..2005.023 rows=30 loops=1)                                                                   |
+|   ->  Sort  (cost=94497.35..94497.69 rows=137 width=457) (actual time=2004.845..2005.019 rows=30 loops=1)                                                             |
+|         Sort Key: (round((abs(((routes.route_lat)::numeric - 44.31194)) + abs(((routes.route_lon)::numeric - '-68.18919'::numeric))), 1)), (avg(ratings.rating)) DESC |
+|         Sort Method: top-N heapsort  Memory: 56kB                                                                                                                     |
+|         ->  Hash Join  (cost=82280.78..94493.30 rows=137 width=457) (actual time=1428.319..2000.227 rows=7553 loops=1)                                                |
+|               Hash Cond: (routes.route_id = ratings.route_id)                                                                                                         |
+|               ->  Seq Scan on routes  (cost=0.00..12206.70 rows=912 width=409) (actual time=0.016..538.906 rows=9060 loops=1)                                         |
+|                     Filter: ((route_lon IS NOT NULL) AND (route_lat IS NOT NULL) AND ((yds)::numeric = '5'::numeric))                                                 |
+|                     Rows Removed by Filter: 173325                                                                                                                    |
+|               ->  Hash  (cost=81939.03..81939.03 rows=27340 width=16) (actual time=1426.984..1427.155 rows=99682 loops=1)                                             |
+|                     Buckets: 131072 (originally 32768)  Batches: 2 (originally 1)  Memory Usage: 3366kB                                                               |
+|                     ->  Finalize HashAggregate  (cost=80896.69..81665.63 rows=27340 width=16) (actual time=1316.292..1396.913 rows=99682 loops=1)                     |
+|                           Group Key: ratings.route_id                                                                                                                 |
+|                           Batches: 21  Memory Usage: 4409kB  Disk Usage: 7488kB                                                                                       |
+|                           ->  Gather  (cost=65860.64..79743.28 rows=27340 width=40) (actual time=1048.716..1263.429 rows=102614 loops=1)                              |
+|                                 Workers Planned: 1                                                                                                                    |
+|                                 Workers Launched: 1                                                                                                                   |
+|                                 ->  Partial HashAggregate  (cost=64860.64..76009.28 rows=27340 width=40) (actual time=1033.803..1220.309 rows=51307 loops=2)          |
+|                                       Group Key: ratings.route_id                                                                                                     |
+|                                       Batches: 5  Memory Usage: 4401kB  Disk Usage: 18224kB                                                                           |
+|                                       Worker 0:  Batches: 5  Memory Usage: 4401kB  Disk Usage: 19264kB                                                                |
+|                                       ->  Parallel Seq Scan on ratings  (cost=0.00..25057.25 rows=1113625 width=12) (actual time=0.347..407.993 rows=946581 loops=2)  |
+| Planning Time: 3.475 ms                                                                                                                                               |
+| Execution Time: 2008.860 ms                                                                                                                                           |
 #### Re-Ran Explain Results:
-We were able to increase the speed of recommend_route by creating an index on ______ which decreased the time of the query
-`CREATE INDEX ON ------- (----)`
+Query 1
+| QUERY PLAN                                                                                                                                           |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Limit  (cost=55.63..55.67 rows=16 width=369) (actual time=1.397..1.401 rows=30 loops=1)                                                              |
+|   ->  Sort  (cost=55.63..55.67 rows=16 width=369) (actual time=1.396..1.398 rows=30 loops=1)                                                         |
+|         Sort Key: climbing.created_at DESC                                                                                                           |
+|         Sort Method: top-N heapsort  Memory: 69kB                                                                                                    |
+|         ->  Nested Loop  (cost=0.71..55.31 rows=16 width=369) (actual time=0.066..1.285 rows=106 loops=1)                                            |
+|               ->  Index Scan using climbing_user_id_idx on climbing  (cost=0.29..13.11 rows=16 width=16) (actual time=0.040..0.531 rows=106 loops=1) |
+|                     Index Cond: (user_id = 30)                                                                                                       |
+|               ->  Index Scan using routes_route_id_key on routes  (cost=0.42..2.64 rows=1 width=369) (actual time=0.007..0.007 rows=1 loops=106)     |
+|                     Index Cond: (route_id = climbing.route_id)                                                                                       |
+|                     Filter: ((route_lon IS NOT NULL) AND (route_lat IS NOT NULL))                                                                    |
+| Planning Time: 1.176 ms                                                                                                                              |
+| Execution Time: 1.481 ms                                                                                                                             |
+
+
+Query 2
+| QUERY PLAN                                                                                                                                                                                  |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Limit  (cost=60698.11..60698.19 rows=30 width=457) (actual time=1577.403..1600.922 rows=30 loops=1)                                                                                         |
+|   ->  Sort  (cost=60698.11..60698.45 rows=137 width=457) (actual time=1577.401..1600.918 rows=30 loops=1)                                                                                   |
+|         Sort Key: (round((abs(((routes.route_lat)::numeric - 44.31194)) + abs(((routes.route_lon)::numeric - '-68.18919'::numeric))), 1)), (avg(ratings.rating)) DESC                       |
+|         Sort Method: top-N heapsort  Memory: 49kB                                                                                                                                           |
+|         ->  Hash Join  (cost=12995.51..60694.06 rows=137 width=457) (actual time=581.312..1595.317 rows=7553 loops=1)                                                                       |
+|               Hash Cond: (ratings.route_id = routes.route_id)                                                                                                                               |
+|               ->  Finalize GroupAggregate  (cost=1000.44..48350.40 rows=27340 width=16) (actual time=10.821..987.479 rows=99682 loops=1)                                                    |
+|                     Group Key: ratings.route_id                                                                                                                                             |
+|                     ->  Gather Merge  (cost=1000.44..47871.95 rows=27340 width=40) (actual time=10.797..946.204 rows=99727 loops=1)                                                         |
+|                           Workers Planned: 1                                                                                                                                                |
+|                           Workers Launched: 1                                                                                                                                               |
+|                           ->  Partial GroupAggregate  (cost=0.43..43796.19 rows=27340 width=40) (actual time=0.503..602.551 rows=49864 loops=2)                                             |
+|                                 Group Key: ratings.route_id                                                                                                                                 |
+|                                 ->  Parallel Index Scan using ratings_route_id_idx on ratings  (cost=0.43..37954.66 rows=1113625 width=12) (actual time=0.482..467.761 rows=946581 loops=2) |
+|               ->  Hash  (cost=11983.67..11983.67 rows=912 width=409) (actual time=569.786..569.857 rows=9060 loops=1)                                                                       |
+|                     Buckets: 16384 (originally 1024)  Batches: 1 (originally 1)  Memory Usage: 3894kB                                                                                       |
+|                     ->  Gather  (cost=1000.00..11983.67 rows=912 width=409) (actual time=1.068..554.729 rows=9060 loops=1)                                                                  |
+|                           Workers Planned: 1                                                                                                                                                |
+|                           Workers Launched: 1                                                                                                                                               |
+|                           ->  Parallel Seq Scan on routes  (cost=0.00..10892.47 rows=536 width=409) (actual time=0.976..556.107 rows=4530 loops=2)                                          |
+|                                 Filter: ((route_lon IS NOT NULL) AND (route_lat IS NOT NULL) AND ((yds)::numeric = '5'::numeric))                                                           |
+|                                 Rows Removed by Filter: 86662                                                                                                                               |
+| Planning Time: 5.427 ms                                                                                                                                                                     |
+| Execution Time: 1603.135 ms                                                                                                                                                                 |
+We were able to increase the speed of recommend_route by creating an index on route_id in ratings which decreased the time of the second query significantly. However, addint an index on route_id in the climbing table seems to have had negligible effects on the first query in the endpoint. 
+`CREATE INDEX ON ratings (route_id)`
+`CREATE INDEX ON climbing (route_id)`
 
 ### get_user_history
+Select * from climbing where user_id = 30
 #### Explain Results:
+| QUERY PLAN                                                                                               |
+| -------------------------------------------------------------------------------------------------------- |
+| Seq Scan on climbing  (cost=0.00..2084.01 rows=16 width=52) (actual time=0.021..39.035 rows=106 loops=1) |
+|   Filter: (user_id = 30)                                                                                 |
+|   Rows Removed by Filter: 99895                                                                          |
+| Planning Time: 0.306 ms                                                                                  |
+| Execution Time: 39.107 ms                                                                                |
 
 #### Re-Ran Explain Results:
+
 We were able to increase the speed of get_user_history ever so slightly by creating an index on user_id which decreased the time of the query by a fraction
 `CREATE INDEX ON climbing (user_id)`
+| QUERY PLAN                                                                                                                         |
+| ---------------------------------------------------------------------------------------------------------------------------------- |
+| Index Scan using climbing_user_id_idx on climbing  (cost=0.29..13.11 rows=16 width=52) (actual time=0.786..1.118 rows=106 loops=1) |
+|   Index Cond: (user_id = 30)                                                                                                       |
+| Planning Time: 0.382 ms                                                                                                            |
+| Execution Time: 1.198 ms                                                                                                           |
 
 ### Performance Results and Usage:
 #### get_leaderboard
 For get_leaderboard it did more than we expected as we didn't think a query with count(*) in it could be made faster by this capacity. Indexes help to sort quickly sort out values needless to the quuery, but since the leaderboard needs to scan through every single entry regardless, there is little in the way of improvement that can be made in terms of efficiency.
 
 #### recommend_route
-For recommend_route...
+For recommend_route the added index for the second query by almost half a second, which is a huge improvement for simply adding one line of code. Adding the route_id index to ratings allows the query to parse through the massive ratings table much faster, yielding a faster execution time. 
 
 #### get_user_history
 For get_user_history, there's little to optimize as it's simply a scan by user_id. Indexing by user_id helps to optimize it slightly in seleciton, but there's little else to be done as it's a collective get from the database.
