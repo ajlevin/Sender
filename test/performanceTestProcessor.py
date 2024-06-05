@@ -9,6 +9,7 @@ from timeit import timeit
 from src.api.climbing import *
 from src.api.routes import *
 from src.api.user import *
+from src.api.leaderboard import *
 
 router = APIRouter(
     prefix="/testing",
@@ -26,6 +27,32 @@ def database_connection_url():
     return f"postgresql://{DB_USER}:{DB_PASSWD}@{DB_SERVER}:{DB_PORT}/{DB_NAME}"
 
 engine = sqlalchemy.create_engine(database_connection_url(), use_insertmanyvalues=True)
+
+def main():
+    print("| Reset tables [RESET]\n" +
+          "| Reset tables and generate data [GENERATE]\n" +
+          "| Run metrics [METRICS]\n" +
+          "| Reset tables and generate data and run metrics [FULL]\n")
+    request = input("Please enter the code within brackets that corresponds to your desired request: ")
+    match request:
+        case "RESET":
+            print("Resetting tables...")
+            resetTables()
+        case "GENERATE":
+            print("Populating test data...")
+            populateTestData()
+        case "METRICS":
+            print("Running metrics...")
+            runMetrics()
+        case "FULL":
+            print("Running full suite request...")
+            print("Populating test data...")
+            populateTestData()
+            print("Running metrics...")
+            runMetrics()
+        case _:
+            print("Invalid input... EXITING.")
+            exit()
 
 def populateTestData():
     # Create new DB engine based on connection string
@@ -119,7 +146,7 @@ def resetTables(bypass_confirmation = False):
             ) tablespace pg_default;
         """))
 
-def generateData(grades, bypass_confirmation = False, iters = 1000000):
+def generateData(grades, bypass_confirmation = False, iters = 500000):
     # A user inputted confirmation is prompted unless bypassed by `bypass_confirmation`
     if not bypass_confirmation:
         confirmation = input(
@@ -243,6 +270,7 @@ def runMetrics():
     print(f"create_route runtime: {timeit(create_route(mocked.get("cr"))):.3f}")
     print(f"create_user runtime: {timeit(create_user(mocked.get("cu"))):.3f}")
     print(f"update_user runtime: {timeit(update_user(mocked.get("uu"))):.3f}")
+    print(f"get_leaderboard runtime: {timeit(get_leaderboard(mocked.get("gl"))):.3f}")
 
 def mockParams():
     testUserIds = []
@@ -265,6 +293,7 @@ def mockParams():
         "cr" : None,
         "cu" : None,
         "uu" : None,
+        "gl" : None,
     }
 
     ### Mocked for create_climb_log
@@ -318,5 +347,10 @@ def mockParams():
             name=uuProfile["name"],
             email=uuProfile["mail"],
             age=fake.pyint(18, 75)))
+    
+    paramDict["gl"] = LeaderboardQueryParams(SortOptions.total_climbs)
 
     return paramDict
+
+if __name__ == "__main__":
+    main()
