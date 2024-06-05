@@ -56,37 +56,37 @@ get_user_history (202 ms), recommend_route (3510 ms), get_leaderboard (2608 ms)
 We were able to increase the speed of get_leaderboard very slightly by creating an index on both yds and route_id which decreased the time of the query
 `CREATE INDEX ON routes (yds)`
 `CREATE INDEX ON routes (route_id)`
-| QUERY PLAN                                                                                                                                                                                            |
-| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Sort  (cost=73551.72..73687.75 rows=54413 width=80) (actual time=1415.599..1502.417 rows=53720 loops=1)                                                                                               |
-|   Sort Key: (count(ra.user_id)) DESC, (max(r.yds)) DESC                                                                                                                                               |
-|   Sort Method: external merge  Disk: 1592kB                                                                                                                                                           |
-|   ->  Finalize HashAggregate  (cost=65929.42..67855.13 rows=54413 width=80) (actual time=1352.387..1453.317 rows=53720 loops=1)                                                                       |
-|         Group Key: u.user_id                                                                                                                                                                          |
-|         Planned Partitions: 4  Batches: 5  Memory Usage: 3505kB  Disk Usage: 3360kB                                                                                                                   |
-|         ->  Gather  (cost=51314.11..62913.33 rows=54413 width=80) (actual time=1196.082..1392.255 rows=88784 loops=1)                                                                                 |
-|               Workers Planned: 1                                                                                                                                                                      |
-|               Workers Launched: 1                                                                                                                                                                     |
-|               ->  Partial HashAggregate  (cost=50314.11..56472.03 rows=54413 width=80) (actual time=1190.181..1303.167 rows=44392 loops=2)                                                            |
-|                     Group Key: u.user_id                                                                                                                                                              |
-|                     Planned Partitions: 4  Batches: 5  Memory Usage: 3889kB  Disk Usage: 11552kB                                                                                                      |
-|                     Worker 0:  Batches: 5  Memory Usage: 3889kB  Disk Usage: 11512kB                                                                                                                  |
-|                     ->  Hash Join  (cost=4701.29..36234.73 rows=287426 width=52) (actual time=101.918..840.269 rows=924026 loops=2)                                                                   |
-|                           Hash Cond: (ra.user_id = u.user_id)                                                                                                                                         |
-|                           ->  Parallel Hash Join  (cost=2755.99..30300.89 rows=287426 width=12) (actual time=70.957..420.107 rows=924026 loops=2)                                                     |
-|                                 Hash Cond: (ra.route_id = r.route_id)                                                                                                                                 |
-|                                 ->  Parallel Seq Scan on ratings ra  (cost=0.00..24667.03 rows=1096303 width=16) (actual time=0.011..88.300 rows=931858 loops=2)                                      |
-|                                 ->  Parallel Hash  (cost=2404.39..2404.39 rows=28128 width=12) (actual time=70.680..70.681 rows=58656 loops=2)                                                        |
-|                                       Buckets: 131072 (originally 65536)  Batches: 1 (originally 1)  Memory Usage: 7072kB                                                                             |
+| QUERY PLAN                                                                                                                                                                                            
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- 
+| Sort  (cost=73551.72..73687.75 rows=54413 width=80) (actual time=1415.599..1502.417 rows=53720 loops=1)                                                                                               
+|   Sort Key: (count(ra.user_id)) DESC, (max(r.yds)) DESC                                                                                                                                               
+|   Sort Method: external merge  Disk: 1592kB                                                                                                                                                           
+|   ->  Finalize HashAggregate  (cost=65929.42..67855.13 rows=54413 width=80) (actual time=1352.387..1453.317 rows=53720 loops=1)                                                                       
+|         Group Key: u.user_id                                                                                                                                                                          
+|         Planned Partitions: 4  Batches: 5  Memory Usage: 3505kB  Disk Usage: 3360kB                                                                                                                   
+|         ->  Gather  (cost=51314.11..62913.33 rows=54413 width=80) (actual time=1196.082..1392.255 rows=88784 loops=1)                                                                                 
+|               Workers Planned: 1                                                                                                                                                                      
+|               Workers Launched: 1                                                                                                                                                                     
+|               ->  Partial HashAggregate  (cost=50314.11..56472.03 rows=54413 width=80) (actual time=1190.181..1303.167 rows=44392 loops=2)                                                            
+|                     Group Key: u.user_id                                                                                                                                                              
+|                     Planned Partitions: 4  Batches: 5  Memory Usage: 3889kB  Disk Usage: 11552kB                                                                                                      
+|                     Worker 0:  Batches: 5  Memory Usage: 3889kB  Disk Usage: 11512kB                                                                                                                  
+|                     ->  Hash Join  (cost=4701.29..36234.73 rows=287426 width=52) (actual time=101.918..840.269 rows=924026 loops=2)                                                                   
+|                           Hash Cond: (ra.user_id = u.user_id)                                                                                                                                         
+|                           ->  Parallel Hash Join  (cost=2755.99..30300.89 rows=287426 width=12) (actual time=70.957..420.107 rows=924026 loops=2)                                                     
+|                                 Hash Cond: (ra.route_id = r.route_id)                                                                                                                                 
+|                                 ->  Parallel Seq Scan on ratings ra  (cost=0.00..24667.03 rows=1096303 width=16) (actual time=0.011..88.300 rows=931858 loops=2)                                      
+|                                 ->  Parallel Hash  (cost=2404.39..2404.39 rows=28128 width=12) (actual time=70.680..70.681 rows=58656 loops=2)                                                        
+|                                       Buckets: 131072 (originally 65536)  Batches: 1 (originally 1)  Memory Usage: 7072kB                                                                             
 |                                       ->  Parallel Index Only Scan using **idx_routes_yds_route_id** on routes r  (cost=0.42..2404.39 rows=28128 width=12) (actual time=0.441..51.275 rows=58656 loops=2) |
-|                                             Index Cond: (yds IS NOT NULL)                                                                                                                             |
-|                                             Filter: ((yds <> 'string'::text) AND (yds <> 'v?'::text))                                                                                                 |
-|                                             Heap Fetches: 1                                                                                                                                           |
-|                           ->  Hash  (cost=839.13..839.13 rows=54413 width=40) (actual time=30.621..30.621 rows=54413 loops=2)                                                                         |
-|                                 Buckets: 65536  Batches: 2  Memory Usage: 1584kB                                                                                                                      |
-|                                 ->  Seq Scan on users u  (cost=0.00..839.13 rows=54413 width=40) (actual time=0.023..18.521 rows=54413 loops=2)                                                       |
-| Planning Time: 21.864 ms                                                                                                                                                                              |
-| Execution Time: 1511.504 ms                                                                                                                                                                           |
+|                                             Index Cond: (yds IS NOT NULL)                                                                                                                             
+|                                             Filter: ((yds <> 'string'::text) AND (yds <> 'v?'::text))                                                                                                 
+|                                             Heap Fetches: 1                                                                                                                                           
+|                           ->  Hash  (cost=839.13..839.13 rows=54413 width=40) (actual time=30.621..30.621 rows=54413 loops=2)                                                                         
+|                                 Buckets: 65536  Batches: 2  Memory Usage: 1584kB                                                                                                                      
+|                                 ->  Seq Scan on users u  (cost=0.00..839.13 rows=54413 width=40) (actual time=0.023..18.521 rows=54413 loops=2)                                                       
+| Planning Time: 21.864 ms                                                                                                                                                                              
+| Execution Time: 1511.504 ms                                                                                                                                                                           
 
 ### recommend_route
 #### Explain Results:
@@ -105,7 +105,6 @@ We were able to increase the speed of get_leaderboard very slightly by creating 
 | Planning Time: 1.050 ms                                                                                                                              |
 | Execution Time: 1.178 ms                                                                                                                             |
 
-Query 2:
 | QUERY PLAN                                                                                                                                                            |
 | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Limit  (cost=94497.35..94497.42 rows=30 width=457) (actual time=2004.847..2005.023 rows=30 loops=1)                                                                   |
@@ -132,8 +131,11 @@ Query 2:
 |                                       ->  Parallel Seq Scan on ratings  (cost=0.00..25057.25 rows=1113625 width=12) (actual time=0.347..407.993 rows=946581 loops=2)  |
 | Planning Time: 3.475 ms                                                                                                                                               |
 | Execution Time: 2008.860 ms                                                                                                                                           |
+
 #### Re-Ran Explain Results:
-Query 1
+We were able to increase the speed of recommend_route by creating an index on route_id in ratings which decreased the time of the second query significantly. However, addint an index on route_id in the climbing table seems to have had negligible effects on the first query in the endpoint. 
+`CREATE INDEX ON ratings (route_id)`
+`CREATE INDEX ON climbing (route_id)`
 | QUERY PLAN                                                                                                                                           |
 | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Limit  (cost=55.63..55.67 rows=16 width=369) (actual time=1.397..1.401 rows=30 loops=1)                                                              |
@@ -149,8 +151,6 @@ Query 1
 | Planning Time: 1.176 ms                                                                                                                              |
 | Execution Time: 1.481 ms                                                                                                                             |
 
-
-Query 2
 | QUERY PLAN                                                                                                                                                                                  |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Limit  (cost=60698.11..60698.19 rows=30 width=457) (actual time=1577.403..1600.922 rows=30 loops=1)                                                                                         |
@@ -177,12 +177,8 @@ Query 2
 |                                 Rows Removed by Filter: 86662                                                                                                                               |
 | Planning Time: 5.427 ms                                                                                                                                                                     |
 | Execution Time: 1603.135 ms                                                                                                                                                                 |
-We were able to increase the speed of recommend_route by creating an index on route_id in ratings which decreased the time of the second query significantly. However, addint an index on route_id in the climbing table seems to have had negligible effects on the first query in the endpoint. 
-`CREATE INDEX ON ratings (route_id)`
-`CREATE INDEX ON climbing (route_id)`
 
 ### get_user_history
-Select * from climbing where user_id = 30
 #### Explain Results:
 | QUERY PLAN                                                                                               |
 | -------------------------------------------------------------------------------------------------------- |
@@ -193,8 +189,7 @@ Select * from climbing where user_id = 30
 | Execution Time: 39.107 ms                                                                                |
 
 #### Re-Ran Explain Results:
-
-We were able to increase the speed of get_user_history ever so slightly by creating an index on user_id which decreased the time of the query by a fraction
+We were able to increase the speed of get_user_history ever by creating an index on user_id which decreased the time of the query notably
 `CREATE INDEX ON climbing (user_id)`
 | QUERY PLAN                                                                                                                         |
 | ---------------------------------------------------------------------------------------------------------------------------------- |
@@ -211,4 +206,4 @@ For get_leaderboard it did more than we expected as we didn't think a query with
 For recommend_route the added index for the second query by almost half a second, which is a huge improvement for simply adding one line of code. Adding the route_id index to ratings allows the query to parse through the massive ratings table much faster, yielding a faster execution time. 
 
 #### get_user_history
-For get_user_history, there's little to optimize as it's simply a scan by user_id. Indexing by user_id helps to optimize it slightly in seleciton, but there's little else to be done as it's a collective get from the database.
+For get_user_history, there's little to optimize as it's simply a scan by user_id. Indexing by user_id helps to optimize it in selection, but there's little else to be done as it's a collective get from the database.
