@@ -11,6 +11,7 @@ Data mocking was done through half-a-million iterations providing a 500k users a
     create_route runtime: ___ms
     create_user runtime: ___ms
     update_user runtime: ___ms
+    get_leaderboard runtime: ___ms
 
 ### Slowest three endpoints (from fastest to slowest): 
 ________ (___ms), ________ (___ms), ________ (___ms)
